@@ -65,9 +65,9 @@ def build_config(run_name: str, overrides: List[str]) -> ExperimentConfig:
         fused_ops=False,
         use_flash=False,
         rope_scaling=RoPELinearScalingConfig(factor=4.0),
-        # dp_config=TransformerDataParallelConfig(
-        #     name=DataParallelType.fsdp, param_dtype=DType.bfloat16, reduce_dtype=DType.float32
-        # ),
+        dp_config=TransformerDataParallelConfig(
+            name=DataParallelType.fsdp, param_dtype=DType.bfloat16, reduce_dtype=DType.float32
+        ),
     )
 
     optim_config = AdamWConfig(
@@ -85,7 +85,7 @@ def build_config(run_name: str, overrides: List[str]) -> ExperimentConfig:
         #  min_sequence_length=256,
         #  vsl_curriculum=VSLCurriculumConfig(name=VSLCurriculumType.grow_p2, num_cycles=4),
         tokenizer=tokenizer_config,
-        work_dir="/tmp/dataset-cache",
+        work_dir="/home1/09636/zyliu/work/OLMo-core/dataset-cache",
     )
 
     data_loader_config = NumpyDataLoaderConfig(
@@ -96,7 +96,7 @@ def build_config(run_name: str, overrides: List[str]) -> ExperimentConfig:
 
     trainer_config = (
         TrainerConfig(
-            save_folder=f"/tmp/{run_name}",
+            save_folder=f"/home1/09636/zyliu/work/OLMo-core/runs/{run_name}",
             rank_microbatch_size=16 * 1024,
             save_overwrite=True,
             metrics_collect_interval=5,
@@ -149,20 +149,20 @@ def build_config(run_name: str, overrides: List[str]) -> ExperimentConfig:
                     name=NumpyDatasetType.padded_fsl,
                     sequence_length=8192,
                     tokenizer=tokenizer_config,
-                    work_dir="/tmp/dataset-cache",
+                    work_dir="/home1/09636/zyliu/work/OLMo-core/dataset-cache",
                 ),
                 eval_interval=10,
                 eval_duration=Duration.steps(10),
             ),
         )
-        # .with_callback({os.environ['SHARE_RES_DIR']}/models/deepseek/deepseek-coder-1.3b-base
-        #     "downstream_evaluator",
-        #     DownstreamEvaluatorCallbackConfig(
-        #         tasks=["hellaswag"],
-        #         tokenizer=tokenizer_config,
-        #         eval_interval=250,
-        #     ),
-        # )
+        .with_callback(
+            "downstream_evaluator",
+            DownstreamEvaluatorCallbackConfig(
+                tasks=["hellaswag"],
+                tokenizer=tokenizer_config,
+                eval_interval=250,
+            ),
+        )
     )
 
     return ExperimentConfig(
